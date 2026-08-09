@@ -2,6 +2,7 @@ import random
 import secrets
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from playwright.async_api import async_playwright
 import uvicorn
@@ -35,6 +36,19 @@ INDIAN_ADDRESSES = [
     {"address": "5th Cross, Indiranagar", "city": "Bengaluru", "state": "KA", "postal": "560001"},
     {"address": "14, Park Street", "city": "Kolkata", "state": "WB", "postal": "700001"}
 ]
+
+# Root Endpoint (Not Found error fix karne ke liye)
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    return """
+    <html>
+        <head><title>ChatGPT Automation API</title></head>
+        <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+            <h1>ChatGPT Automation Backend is Live!</h1>
+            <p>API documentation ke liye <a href="/docs">/docs</a> par jayein.</p>
+        </body>
+    </html>
+    """
 
 # Admin Endpoint: Saari keys aur unka status dekhne ke liye
 @app.get("/admin/keys")
@@ -127,3 +141,4 @@ async def start_checkout(data: PaymentRequest):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    
