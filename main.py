@@ -41,7 +41,7 @@ INDIAN_ADDRESSES = [
     {"address": "14, Park Street", "city": "Kolkata", "state": "WB", "postal": "700001"}
 ]
 
-# Professional Dashboard & Login UI
+# Professional Dashboard & Login UI with Show/Hide Password & Copy Key Option
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     return """
@@ -50,11 +50,11 @@ async def read_root():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ChatGPT Automation Admin Panel</title>
+        <title>ChatGPT Automation Pro Panel</title>
         <style>
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: #0f172a;
+                background: #090d16;
                 color: #f8fafc;
                 margin: 0;
                 padding: 20px;
@@ -65,17 +65,18 @@ async def read_root():
             }
             .container {
                 width: 100%;
-                max-width: 600px;
-                background: #1e293b;
+                max-width: 650px;
+                background: #111827;
                 padding: 30px;
-                border-radius: 12px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-                border: 1px solid #334155;
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+                border: 1px solid #1f2937;
             }
             h2 {
                 color: #38bdf8;
                 text-align: center;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
+                font-weight: 600;
             }
             .hidden { display: none !important; }
             .form-group {
@@ -83,68 +84,107 @@ async def read_root():
             }
             label {
                 display: block;
-                font-size: 14px;
-                margin-bottom: 5px;
-                color: #94a3b8;
+                font-size: 13px;
+                margin-bottom: 6px;
+                color: #9ca3af;
+                font-weight: 500;
+            }
+            .password-wrapper {
+                position: relative;
             }
             input {
                 width: 100%;
-                padding: 10px;
-                background: #0f172a;
-                border: 1px solid #475569;
+                padding: 12px;
+                background: #030712;
+                border: 1px solid #374151;
                 color: white;
-                border-radius: 6px;
+                border-radius: 8px;
                 box-sizing: border-box;
+                font-size: 14px;
+            }
+            input:focus {
+                border-color: #38bdf8;
+                outline: none;
+            }
+            .toggle-eye {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: pointer;
+                color: #9ca3af;
+                font-size: 16px;
+                user-select: none;
             }
             button {
                 width: 100%;
-                padding: 10px;
-                background: #0ea5e9;
+                padding: 12px;
+                background: #0284c7;
                 color: white;
                 border: none;
-                border-radius: 6px;
-                font-weight: bold;
+                border-radius: 8px;
+                font-weight: 600;
                 cursor: pointer;
                 transition: background 0.2s;
+                font-size: 14px;
             }
-            button:hover { background: #0284c7; }
+            button:hover { background: #0369a1; }
             .key-card {
-                background: #0f172a;
-                border: 1px solid #334155;
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 10px;
+                background: #030712;
+                border: 1px solid #1f2937;
+                padding: 16px;
+                border-radius: 10px;
+                margin-bottom: 12px;
             }
             .key-header {
                 display: flex;
                 justify-content: space-between;
-                font-weight: bold;
+                align-items: center;
+                font-family: monospace;
                 color: #38bdf8;
-                font-size: 14px;
+                font-size: 13px;
                 word-break: break-all;
+                background: #111827;
+                padding: 8px 12px;
+                border-radius: 6px;
+                border: 1px solid #1f2937;
             }
-            .badge-active { color: #22c55e; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-            .badge-exhausted { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+            .badge-active { color: #4ade80; background: rgba(74, 222, 128, 0.1); padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+            .badge-exhausted { color: #f87171; background: rgba(248, 113, 113, 0.1); padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
             .stats-row {
                 display: flex;
                 justify-content: space-between;
                 font-size: 13px;
-                color: #94a3b8;
-                margin-top: 8px;
+                color: #9ca3af;
+                margin-top: 12px;
             }
             .actions-row {
                 display: flex;
                 gap: 10px;
-                margin-top: 10px;
+                margin-top: 12px;
+                align-items: center;
             }
             .btn-sm {
-                padding: 5px 10px;
+                padding: 7px 14px;
                 font-size: 12px;
-                background: #334155;
+                width: auto;
+                background: #374151;
             }
-            .btn-sm:hover { background: #475569; }
-            .error-msg { color: #ef4444; text-align: center; font-size: 14px; margin-top: 10px; }
-            .success-msg { color: #22c55e; text-align: center; font-size: 14px; margin-top: 10px; }
+            .btn-sm:hover { background: #4b5563; }
+            .btn-copy { background: #047857; }
+            .btn-copy:hover { background: #065f46; }
+            .error-msg { color: #f87171; text-align: center; font-size: 13px; margin-top: 10px; }
+            .success-box {
+                background: rgba(14, 165, 233, 0.1);
+                border: 1px solid #0284c7;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                font-size: 13px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
         </style>
     </head>
     <body>
@@ -155,33 +195,48 @@ async def read_root():
             <h2>🔐 Admin Login</h2>
             <div class="form-group">
                 <label>Admin Password</label>
-                <input type="password" id="adminPassword" placeholder="Enter password (default: admin123)">
+                <div class="password-wrapper">
+                    <input type="password" id="adminPassword" placeholder="Enter password (default: admin123)">
+                    <span class="toggle-eye" onclick="togglePasswordVisibility()">👁️</span>
+                </div>
             </div>
-            <button onclick="handleLogin()">Login</button>
+            <button onclick="handleLogin()">Login to Dashboard</button>
             <div id="loginError" class="error-msg"></div>
         </div>
 
         <!-- DASHBOARD SECTION -->
         <div id="dashboardSection" class="hidden">
-            <h2>🚀 API Key Manager</h2>
+            <h2>🚀 API Key Manager Pro</h2>
             
-            <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155;">
-                <h3 style="margin-top:0; color:#f8fafc; font-size:16px;">Generate New API Key</h3>
+            <div style="background: #030712; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #1f2937;">
+                <h3 style="margin-top:0; color:#f8fafc; font-size:15px; margin-bottom: 12px;">Generate New API Key</h3>
                 <div class="form-group">
-                    <label>Limit (Max Uses)</label>
+                    <label>Limit (Max Automation Uses)</label>
                     <input type="number" id="keyLimit" value="5" min="1">
                 </div>
                 <button onclick="generateKey()">Generate Key</button>
-                <div id="genResult" class="success-msg"></div>
+                <div id="genResultContainer" style="margin-top: 15px;"></div>
             </div>
 
-            <h3 style="color:#f8fafc; font-size:16px;">Existing API Keys Status</h3>
-            <div id="keysList">Loading...</div>
-            <button onclick="loadKeys()" style="margin-top: 15px; background: #334155;">Refresh Keys</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="color:#f8fafc; font-size:15px; margin:0;">Active & Exhausted Keys</h3>
+                <button class="btn-sm" onclick="loadKeys()" style="background: #1f2937;">🔄 Refresh</button>
+            </div>
+            
+            <div id="keysList">Loading keys...</div>
         </div>
     </div>
 
     <script>
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('adminPassword');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+            } else {
+                pwdInput.type = 'password';
+            }
+        }
+
         function handleLogin() {
             const pwd = document.getElementById('adminPassword').value;
             if (pwd === "admin123") {
@@ -203,7 +258,7 @@ async def read_root():
                 for (const [key, info] of Object.entries(data.keys)) {
                     const isExhausted = info.used >= info.limit;
                     const badge = isExhausted 
-                        ? '<span class="badge-exhausted">Limit Exhausted</span>' 
+                        ? '<span class="badge-exhausted">Exhausted</span>' 
                         : '<span class="badge-active">Active</span>';
 
                     const card = document.createElement('div');
@@ -216,11 +271,12 @@ async def read_root():
                         <div class="stats-row">
                             <span>Limit: <b>${info.limit}</b></span>
                             <span>Used: <b>${info.used}</b></span>
-                            <span>Remaining: <b>${info.limit - info.used}</b></span>
+                            <span>Remaining: <b style="color: ${info.limit - info.used > 0 ? '#38bdf8' : '#f87171'}">${info.limit - info.used}</b></span>
                         </div>
                         <div class="actions-row">
-                            <input type="number" id="inc_${key}" value="5" min="1" style="width: 80px; padding: 4px;">
-                            <button class="btn-sm" onclick="increaseLimit('${key}')">Increase Limit</button>
+                            <button class="btn-sm btn-copy" onclick="copyToClipboard('${key}')">📋 Copy Key</button>
+                            <input type="number" id="inc_${key}" value="5" min="1" style="width: 70px; padding: 6px; text-align: center;">
+                            <button class="btn-sm" onclick="increaseLimit('${key}')">➕ Add Limit</button>
                         </div>
                     `;
                     keysContainer.appendChild(card);
@@ -239,9 +295,23 @@ async def read_root():
             });
             const data = await res.json();
             if(res.ok) {
-                document.getElementById('genResult').innerText = `New Key: ${data.api_key}`;
+                const resultDiv = document.getElementById('genResultContainer');
+                resultDiv.innerHTML = `
+                    <div class="success-box">
+                        <span style="font-family:monospace; word-break:break-all; margin-right:10px;"><b>New Key:</b> ${data.api_key}</span>
+                        <button class="btn-sm btn-copy" style="width:auto; white-space:nowrap;" onclick="copyToClipboard('${data.api_key}')">📋 Copy</button>
+                    </div>
+                `;
                 loadKeys();
             }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("API Key copied successfully!");
+            }).catch(err => {
+                alert("Failed to copy text.");
+            });
         }
 
         async function increaseLimit(apiKey) {
