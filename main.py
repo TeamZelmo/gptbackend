@@ -28,20 +28,21 @@ class IncreaseLimitRequest(BaseModel):
     api_key: str
     extra_limit: int
 
-# Runtime memory storage for API Keys
-API_DATABASE = {
-    "sk_live_my_secret_key_123": {"limit": 5, "used": 0}
-}
+class DeleteKeyRequest(BaseModel):
+    api_key: str
+
+# Blank Database (Starts fresh with no pre-existing keys)
+API_DATABASE = {}
 
 INDIAN_ADDRESSES = [
     {"address": "Flat 101, Boring Road", "city": "Patna", "state": "BR", "postal": "800001"},
     {"address": "B-21, Connaught Place", "city": "New Delhi", "state": "DL", "postal": "110001"},
     {"address": "A-12, MG Road", "city": "Mumbai", "state": "MH", "postal": "400001"},
     {"address": "5th Cross, Indiranagar", "city": "Bengaluru", "state": "KA", "postal": "560001"},
-    {"address": "14, Park Street", "city": "Kolkata", "state": "WB", "postal": "700001"}
+    {"address": "14, Park Street", "city": "Kolkata", "state": "WB", "postal": "110001"}
 ]
 
-# Professional Dashboard & Login UI with Show/Hide Password & Copy Key Option
+# Professional Dashboard & Login UI
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     return """
@@ -163,6 +164,7 @@ async def read_root():
                 gap: 10px;
                 margin-top: 12px;
                 align-items: center;
+                flex-wrap: wrap;
             }
             .btn-sm {
                 padding: 7px 14px;
@@ -173,7 +175,10 @@ async def read_root():
             .btn-sm:hover { background: #4b5563; }
             .btn-copy { background: #047857; }
             .btn-copy:hover { background: #065f46; }
+            .btn-delete { background: #b91c1c; }
+            .btn-delete:hover { background: #991b1b; }
             .error-msg { color: #f87171; text-align: center; font-size: 13px; margin-top: 10px; }
+            .empty-msg { color: #9ca3af; text-align: center; padding: 20px; font-size: 14px; background: #030712; border-radius: 8px; border: 1px dashed #374151; }
             .success-box {
                 background: rgba(14, 165, 233, 0.1);
                 border: 1px solid #0284c7;
@@ -255,7 +260,13 @@ async def read_root():
                 const keysContainer = document.getElementById('keysList');
                 keysContainer.innerHTML = '';
 
-                for (const [key, info] of Object.entries(data.keys)) {
+                const entries = Object.entries(data.keys);
+                if (entries.length === 0) {
+                    keysContainer.innerHTML = '<div class="empty-msg">No API keys found. Generate a new key above!</div>';
+                    return;
+                }
+
+                for (const [key, info] of entries) {
                     const isExhausted = info.used >= info.limit;
                     const badge = isExhausted 
                         ? '<span class="badge-exhausted">Exhausted</span>' 
@@ -274,9 +285,10 @@ async def read_root():
                             <span>Remaining: <b style="color: ${info.limit - info.used > 0 ? '#38bdf8' : '#f87171'}">${info.limit - info.used}</b></span>
                         </div>
                         <div class="actions-row">
-                            <button class="btn-sm btn-copy" onclick="copyToClipboard('${key}')">📋 Copy Key</button>
-                            <input type="number" id="inc_${key}" value="5" min="1" style="width: 70px; padding: 6px; text-align: center;">
-                            <button class="btn-sm" onclick="increaseLimit('${key}')">➕ Add Limit</button>
+                            <button class="btn-sm btn-copy" onclick="copyToClipboard('${key}')">📋 Copy</button>
+                            <input type="number" id="inc_${key}" value="5" min="1" style="width: 60px; padding: 6px; text-align: center;">
+                            <button class="btn-sm" onclick="increaseLimit('${key}')">➕ Add</button>
+                            <button class="btn-sm btn-delete" onclick="deleteKey('${key}')">🗑️ Delete</button>
                         </div>
                     `;
                     keysContainer.appendChild(card);
@@ -329,6 +341,21 @@ async def read_root():
                 alert("Failed to increase limit!");
             }
         }
+
+        async function deleteKey(apiKey) {
+            if (!confirm("Are you sure you want to delete this API key?")) return;
+
+            const res = await fetch('/admin/delete-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: apiKey })
+            });
+            if(res.ok) {
+                loadKeys();
+            } else {
+                alert("Failed to delete API key!");
+            }
+        }
     </script>
 
     </body>
@@ -360,6 +387,16 @@ async def increase_api_limit(data: IncreaseLimitRequest):
     return {
         "status": "success",
         "new_limit": API_DATABASE[data.api_key]["limit"]
+    }
+
+@app.post("/admin/delete-key")
+async def delete_api_key(data: DeleteKeyRequest):
+    if data.api_key not in API_DATABASE:
+        raise HTTPException(status_code=404, detail="API Key not found!")
+    del API_DATABASE[data.api_key]
+    return {
+        "status": "success",
+        "message": "API key deleted successfully"
     }
 
 @app.post("/start-checkout")
