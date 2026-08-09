@@ -418,10 +418,20 @@ async def start_checkout(data: PaymentRequest):
     limit_used = key_info["used"]
     limit_remaining = limit_total - limit_used
     
-    # Updated with headless=False and extra safety waits to debug / bypass bot flags
+    # Updated with headless=True and Linux/Render compatible sandbox args
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, args=["--start-maximized"])
-        context = await browser.new_context(no_viewport=True)
+        browser = await p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu"
+            ]
+        )
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 800}
+        )
         
         await context.add_cookies([
             {
