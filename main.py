@@ -201,7 +201,6 @@ async def read_root():
             <div class="form-group">
                 <label>Admin Password</label>
                 <div class="password-wrapper">
-                    <!-- Password field is now clean with no default password hinted -->
                     <input type="password" id="adminPassword" placeholder="Enter password">
                     <span class="toggle-eye" onclick="togglePasswordVisibility()">👁️</span>
                 </div>
@@ -304,7 +303,7 @@ async def read_root():
             const res = await fetch('/generate-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ limit })
+                body: JSON.stringify({ limit })
             });
             const data = await res.json();
             if(res.ok) {
@@ -407,7 +406,6 @@ async def start_checkout(data: PaymentRequest):
     
     key_info = API_DATABASE[data.api_key]
     
-    # Calculate current values
     limit_total = key_info["limit"]
     limit_used = key_info["used"]
     limit_remaining = limit_total - limit_used
@@ -418,7 +416,6 @@ async def start_checkout(data: PaymentRequest):
             detail=f"API Limit Reached! Allowed: {limit_total}, Used: {limit_used}"
         )
     
-    # Increment usage
     key_info["used"] += 1
     limit_used = key_info["used"]
     limit_remaining = limit_total - limit_used
@@ -444,8 +441,19 @@ async def start_checkout(data: PaymentRequest):
             await page.goto("https://chatgpt.com/", timeout=60000)
             await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
-            # Corrected spelling from "Free of fer" to "Free offer"
-            await page.locator("text=Free offer").click(timeout=10000)
+            # Robust fallback to support both "Free offer" and "Free of fer" automatically
+            clicked = False
+            for selector in ["text=Free offer", "text=Free of fer"]:
+                try:
+                    await page.locator(selector).click(timeout=5000)
+                    clicked = True
+                    break
+                except Exception:
+                    continue
+            
+            if not clicked:
+                raise Exception("Could not find 'Free offer' button or text on page.")
+
             await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
             try:
@@ -472,7 +480,6 @@ async def start_checkout(data: PaymentRequest):
             await page.wait_for_timeout(5000)
             await browser.close()
             
-            # Returning total, used and remaining limits so popup displays them correctly
             return {
                 "status": "success", 
                 "message": "Automation completed.",
