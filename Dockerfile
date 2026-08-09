@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Requirements file copy karke dependencies install karein
-COPY rq.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r rq.txt
 
 # Playwright ke browsers aur system dependencies install karein
