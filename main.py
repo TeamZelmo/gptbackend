@@ -405,11 +405,9 @@ async def start_checkout(data: PaymentRequest):
         raise HTTPException(status_code=401, detail="Invalid API Key!")
     
     key_info = API_DATABASE[data.api_key]
-    
     limit_total = key_info["limit"]
     limit_used = key_info["used"]
-    limit_remaining = limit_total - limit_used
-
+    
     if limit_used >= limit_total:
         raise HTTPException(
             status_code=403, 
@@ -441,7 +439,6 @@ async def start_checkout(data: PaymentRequest):
             await page.goto("https://chatgpt.com/", timeout=60000)
             await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
-            # Robust fallback to support both "Free offer" and "Free of fer" automatically
             clicked = False
             for selector in ["text=Free offer", "text=Free of fer"]:
                 try:
