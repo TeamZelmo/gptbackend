@@ -304,7 +304,7 @@ async def read_root():
             const res = await fetch('/generate-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ limit })
+            body: JSON.stringify({ limit })
             });
             const data = await res.json();
             if(res.ok) {
@@ -406,13 +406,22 @@ async def start_checkout(data: PaymentRequest):
         raise HTTPException(status_code=401, detail="Invalid API Key!")
     
     key_info = API_DATABASE[data.api_key]
-    if key_info["used"] >= key_info["limit"]:
+    
+    # Calculate current values
+    limit_total = key_info["limit"]
+    limit_used = key_info["used"]
+    limit_remaining = limit_total - limit_used
+
+    if limit_used >= limit_total:
         raise HTTPException(
             status_code=403, 
-            detail=f"API Limit Reached! Allowed: {key_info['limit']}, Used: {key_info['used']}"
+            detail=f"API Limit Reached! Allowed: {limit_total}, Used: {limit_used}"
         )
     
+    # Increment usage
     key_info["used"] += 1
+    limit_used = key_info["used"]
+    limit_remaining = limit_total - limit_used
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -435,6 +444,7 @@ async def start_checkout(data: PaymentRequest):
             await page.goto("https://chatgpt.com/", timeout=60000)
             await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
+            # Corrected spelling from "Free of fer" to "Free offer"
             await page.locator("text=Free offer").click(timeout=10000)
             await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
@@ -462,11 +472,13 @@ async def start_checkout(data: PaymentRequest):
             await page.wait_for_timeout(5000)
             await browser.close()
             
-            remaining = key_info["limit"] - key_info["used"]
+            # Returning total, used and remaining limits so popup displays them correctly
             return {
                 "status": "success", 
                 "message": "Automation completed.",
-                "limit_remaining": remaining
+                "limit_total": limit_total,
+                "limit_used": limit_used,
+                "limit_remaining": limit_remaining
             }
             
         except Exception as e:
