@@ -24,9 +24,13 @@ class PaymentRequest(BaseModel):
 class KeyGenRequest(BaseModel):
     limit: int = 5
 
+class IncreaseLimitRequest(BaseModel):
+    api_key: str
+    extra_limit: int
+
 # Runtime memory storage for API Keys
 API_DATABASE = {
-    "my_secret_key_123": {"limit": 5, "used": 0}
+    "sk_live_my_secret_key_123": {"limit": 5, "used": 0}
 }
 
 INDIAN_ADDRESSES = [
@@ -37,7 +41,7 @@ INDIAN_ADDRESSES = [
     {"address": "14, Park Street", "city": "Kolkata", "state": "WB", "postal": "700001"}
 ]
 
-# Professional Root Dashboard with Buttons
+# Professional Dashboard & Login UI
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     return """
@@ -46,113 +50,225 @@ async def read_root():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ChatGPT Automation Dashboard</title>
+        <title>ChatGPT Automation Admin Panel</title>
         <style>
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #0f172a, #1e293b);
+                background: #0f172a;
                 color: #f8fafc;
                 margin: 0;
-                padding: 0;
+                padding: 20px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                height: 100vh;
+                min-height: 100vh;
             }
-            .card {
-                background: rgba(30, 41, 59, 0.7);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                padding: 40px;
-                border-radius: 16px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-                text-align: center;
-                max-width: 450px;
-                width: 90%;
-            }
-            h1 {
-                margin-bottom: 10px;
-                font-size: 24px;
-                color: #38bdf8;
-            }
-            p {
-                color: #94a3b8;
-                font-size: 14px;
-                margin-bottom: 30px;
-            }
-            .btn-container {
-                display: flex;
-                flex-direction: column;
-                gap: 15px;
-            }
-            .btn {
-                display: block;
+            .container {
                 width: 100%;
-                padding: 12px 20px;
-                font-size: 16px;
-                font-weight: 600;
-                text-decoration: none;
-                border-radius: 8px;
-                transition: all 0.3s ease;
+                max-width: 600px;
+                background: #1e293b;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+                border: 1px solid #334155;
+            }
+            h2 {
+                color: #38bdf8;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .hidden { display: none !important; }
+            .form-group {
+                margin-bottom: 15px;
+            }
+            label {
+                display: block;
+                font-size: 14px;
+                margin-bottom: 5px;
+                color: #94a3b8;
+            }
+            input {
+                width: 100%;
+                padding: 10px;
+                background: #0f172a;
+                border: 1px solid #475569;
+                color: white;
+                border-radius: 6px;
                 box-sizing: border-box;
             }
-            .btn-primary {
-                background-color: #0ea5e9;
+            button {
+                width: 100%;
+                padding: 10px;
+                background: #0ea5e9;
                 color: white;
+                border: none;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background 0.2s;
             }
-            .btn-primary:hover {
-                background-color: #0284c7;
-                box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+            button:hover { background: #0284c7; }
+            .key-card {
+                background: #0f172a;
+                border: 1px solid #334155;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 10px;
             }
-            .btn-secondary {
-                background-color: #334155;
-                color: #f8fafc;
-                border: 1px solid #475569;
+            .key-header {
+                display: flex;
+                justify-content: space-between;
+                font-weight: bold;
+                color: #38bdf8;
+                font-size: 14px;
+                word-break: break-all;
             }
-            .btn-secondary:hover {
-                background-color: #475569;
-                box-shadow: 0 4px 12px rgba(71, 85, 105, 0.4);
+            .badge-active { color: #22c55e; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+            .badge-exhausted { color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+            .stats-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                color: #94a3b8;
+                margin-top: 8px;
             }
-            .status-badge {
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background-color: #22c55e;
-                border-radius: 50%;
-                margin-right: 8px;
+            .actions-row {
+                display: flex;
+                gap: 10px;
+                margin-top: 10px;
             }
-            .status-text {
+            .btn-sm {
+                padding: 5px 10px;
                 font-size: 12px;
-                color: #22c55e;
-                margin-bottom: 20px;
-                font-weight: 500;
+                background: #334155;
             }
+            .btn-sm:hover { background: #475569; }
+            .error-msg { color: #ef4444; text-align: center; font-size: 14px; margin-top: 10px; }
+            .success-msg { color: #22c55e; text-align: center; font-size: 14px; margin-top: 10px; }
         </style>
     </head>
     <body>
-        <div class="card">
-            <div>
-                <span class="status-badge"></span>
-                <span class="status-text">System Online & Active</span>
+
+    <div class="container">
+        <!-- LOGIN SECTION -->
+        <div id="loginSection">
+            <h2>🔐 Admin Login</h2>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter password (default: admin123)">
             </div>
-            <h1>ChatGPT Automation</h1>
-            <p>Manage your API keys, view documentation, and monitor automation statuses seamlessly.</p>
-            
-            <div class="btn-container">
-                <a href="/docs" class="btn btn-primary">📖 API Documentation (Swagger)</a>
-                <a href="/admin/keys" class="btn btn-secondary">🔑 View Active API Keys</a>
-            </div>
+            <button onclick="handleLogin()">Login</button>
+            <div id="loginError" class="error-msg"></div>
         </div>
+
+        <!-- DASHBOARD SECTION -->
+        <div id="dashboardSection" class="hidden">
+            <h2>🚀 API Key Manager</h2>
+            
+            <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155;">
+                <h3 style="margin-top:0; color:#f8fafc; font-size:16px;">Generate New API Key</h3>
+                <div class="form-group">
+                    <label>Limit (Max Uses)</label>
+                    <input type="number" id="keyLimit" value="5" min="1">
+                </div>
+                <button onclick="generateKey()">Generate Key</button>
+                <div id="genResult" class="success-msg"></div>
+            </div>
+
+            <h3 style="color:#f8fafc; font-size:16px;">Existing API Keys Status</h3>
+            <div id="keysList">Loading...</div>
+            <button onclick="loadKeys()" style="margin-top: 15px; background: #334155;">Refresh Keys</button>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin() {
+            const pwd = document.getElementById('adminPassword').value;
+            if (pwd === "admin123") {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                loadKeys();
+            } else {
+                document.getElementById('loginError').innerText = "Incorrect Password! Try 'admin123'";
+            }
+        }
+
+        async function loadKeys() {
+            try {
+                const res = await fetch('/admin/keys');
+                const data = await res.json();
+                const keysContainer = document.getElementById('keysList');
+                keysContainer.innerHTML = '';
+
+                for (const [key, info] of Object.entries(data.keys)) {
+                    const isExhausted = info.used >= info.limit;
+                    const badge = isExhausted 
+                        ? '<span class="badge-exhausted">Limit Exhausted</span>' 
+                        : '<span class="badge-active">Active</span>';
+
+                    const card = document.createElement('div');
+                    card.className = 'key-card';
+                    card.innerHTML = `
+                        <div class="key-header">
+                            <span>${key}</span>
+                            ${badge}
+                        </div>
+                        <div class="stats-row">
+                            <span>Limit: <b>${info.limit}</b></span>
+                            <span>Used: <b>${info.used}</b></span>
+                            <span>Remaining: <b>${info.limit - info.used}</b></span>
+                        </div>
+                        <div class="actions-row">
+                            <input type="number" id="inc_${key}" value="5" min="1" style="width: 80px; padding: 4px;">
+                            <button class="btn-sm" onclick="increaseLimit('${key}')">Increase Limit</button>
+                        </div>
+                    `;
+                    keysContainer.appendChild(card);
+                }
+            } catch (err) {
+                document.getElementById('keysList').innerText = "Failed to load keys.";
+            }
+        }
+
+        async function generateKey() {
+            const limit = parseInt(document.getElementById('keyLimit').value) || 5;
+            const res = await fetch('/generate-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ limit })
+            });
+            const data = await res.json();
+            if(res.ok) {
+                document.getElementById('genResult').innerText = `New Key: ${data.api_key}`;
+                loadKeys();
+            }
+        }
+
+        async function increaseLimit(apiKey) {
+            const extraInput = document.getElementById(`inc_${apiKey}`);
+            const extra_limit = parseInt(extraInput.value) || 5;
+
+            const res = await fetch('/admin/increase-limit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: apiKey, extra_limit })
+            });
+            if(res.ok) {
+                loadKeys();
+            } else {
+                alert("Failed to increase limit!");
+            }
+        }
+    </script>
+
     </body>
     </html>
     """
 
-# Admin Endpoint: Saari keys aur unka status dekhne ke liye
 @app.get("/admin/keys")
 async def get_all_keys():
     return {"status": "success", "keys": API_DATABASE}
 
-# Admin Endpoint: Nayi API Key generate karne ke liye
 @app.post("/generate-key")
 async def generate_api_key(data: KeyGenRequest):
     new_key = f"sk_live_{secrets.token_hex(8)}"
@@ -164,6 +280,16 @@ async def generate_api_key(data: KeyGenRequest):
         "status": "success",
         "api_key": new_key,
         "limit": data.limit
+    }
+
+@app.post("/admin/increase-limit")
+async def increase_api_limit(data: IncreaseLimitRequest):
+    if data.api_key not in API_DATABASE:
+        raise HTTPException(status_code=404, detail="API Key not found!")
+    API_DATABASE[data.api_key]["limit"] += data.extra_limit
+    return {
+        "status": "success",
+        "new_limit": API_DATABASE[data.api_key]["limit"]
     }
 
 @app.post("/start-checkout")
@@ -198,11 +324,11 @@ async def start_checkout(data: PaymentRequest):
         page = await context.new_page()
         
         try:
-            await page.goto("https://chatgpt.com/?action=show_upgrade")
-            await page.wait_for_load_state("networkidle")
+            await page.goto("https://chatgpt.com/?action=show_upgrade", timeout=60000)
+            await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
             try:
-                await page.select_option("select[name='country']", "IN", timeout=5000)
+                await page.select_option("select[name='country']", "IN", timeout=10000)
             except Exception:
                 pass
 
@@ -217,12 +343,12 @@ async def start_checkout(data: PaymentRequest):
             try:
                 payment_frame = page.frame_locator("iframe[title*='Secure payment input frame']")
                 upi_option = payment_frame.locator("text=UPI")
-                if await upi_option.is_visible(timeout=5000):
+                if await upi_option.is_visible(timeout=10000):
                     await upi_option.click()
             except Exception:
                 pass
 
-            await page.wait_for_timeout(10000)
+            await page.wait_for_timeout(5000)
             await browser.close()
             
             remaining = key_info["limit"] - key_info["used"]
@@ -238,4 +364,3 @@ async def start_checkout(data: PaymentRequest):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
-    
