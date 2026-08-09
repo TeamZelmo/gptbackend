@@ -418,9 +418,10 @@ async def start_checkout(data: PaymentRequest):
     limit_used = key_info["used"]
     limit_remaining = limit_total - limit_used
     
+    # Updated with headless=False and extra safety waits to debug / bypass bot flags
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context()
+        browser = await p.chromium.launch(headless=False, args=["--start-maximized"])
+        context = await browser.new_context(no_viewport=True)
         
         await context.add_cookies([
             {
@@ -437,12 +438,22 @@ async def start_checkout(data: PaymentRequest):
         
         try:
             await page.goto("https://chatgpt.com/", timeout=60000)
-            await page.wait_for_load_state("domcontentloaded", timeout=60000)
+            
+            # Extra wait to ensure page loads fully and avoids bot detection blocks
+            await page.wait_for_timeout(5000)
             
             clicked = False
-            for selector in ["text=Free offer", "text=Free of fer"]:
+            selectors = [
+                "text=Free offer", 
+                "text=Free of fer", 
+                "a:has-text('Free offer')", 
+                "button:has-text('Free offer')",
+                "text=Upgrade"
+            ]
+            
+            for selector in selectors:
                 try:
-                    await page.locator(selector).click(timeout=5000)
+                    await page.locator(selector).first.click(timeout=5000)
                     clicked = True
                     break
                 except Exception:
