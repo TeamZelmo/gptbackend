@@ -37,16 +37,113 @@ INDIAN_ADDRESSES = [
     {"address": "14, Park Street", "city": "Kolkata", "state": "WB", "postal": "700001"}
 ]
 
-# Root Endpoint (Not Found error fix karne ke liye)
+# Professional Root Dashboard with Buttons
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     return """
-    <html>
-        <head><title>ChatGPT Automation API</title></head>
-        <body style="font-family: Arial; text-align: center; margin-top: 50px;">
-            <h1>ChatGPT Automation Backend is Live!</h1>
-            <p>API documentation ke liye <a href="/docs">/docs</a> par jayein.</p>
-        </body>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ChatGPT Automation Dashboard</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #0f172a, #1e293b);
+                color: #f8fafc;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            .card {
+                background: rgba(30, 41, 59, 0.7);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 40px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+                text-align: center;
+                max-width: 450px;
+                width: 90%;
+            }
+            h1 {
+                margin-bottom: 10px;
+                font-size: 24px;
+                color: #38bdf8;
+            }
+            p {
+                color: #94a3b8;
+                font-size: 14px;
+                margin-bottom: 30px;
+            }
+            .btn-container {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            .btn {
+                display: block;
+                width: 100%;
+                padding: 12px 20px;
+                font-size: 16px;
+                font-weight: 600;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                box-sizing: border-box;
+            }
+            .btn-primary {
+                background-color: #0ea5e9;
+                color: white;
+            }
+            .btn-primary:hover {
+                background-color: #0284c7;
+                box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+            }
+            .btn-secondary {
+                background-color: #334155;
+                color: #f8fafc;
+                border: 1px solid #475569;
+            }
+            .btn-secondary:hover {
+                background-color: #475569;
+                box-shadow: 0 4px 12px rgba(71, 85, 105, 0.4);
+            }
+            .status-badge {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                background-color: #22c55e;
+                border-radius: 50%;
+                margin-right: 8px;
+            }
+            .status-text {
+                font-size: 12px;
+                color: #22c55e;
+                margin-bottom: 20px;
+                font-weight: 500;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div>
+                <span class="status-badge"></span>
+                <span class="status-text">System Online & Active</span>
+            </div>
+            <h1>ChatGPT Automation</h1>
+            <p>Manage your API keys, view documentation, and monitor automation statuses seamlessly.</p>
+            
+            <div class="btn-container">
+                <a href="/docs" class="btn btn-primary">📖 API Documentation (Swagger)</a>
+                <a href="/admin/keys" class="btn btn-secondary">🔑 View Active API Keys</a>
+            </div>
+        </div>
+    </body>
     </html>
     """
 
