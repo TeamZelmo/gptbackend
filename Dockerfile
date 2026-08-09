@@ -25,7 +25,7 @@ WORKDIR /app
 
 # Requirements file copy karke dependencies install karein
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r rq.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Playwright ke browsers aur system dependencies install karein
 RUN playwright install --with-deps
