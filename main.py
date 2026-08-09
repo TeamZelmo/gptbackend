@@ -201,7 +201,8 @@ async def read_root():
             <div class="form-group">
                 <label>Admin Password</label>
                 <div class="password-wrapper">
-                    <input type="password" id="adminPassword" placeholder="Enter password (default: admin123)">
+                    <!-- Password field is now clean with no default password hinted -->
+                    <input type="password" id="adminPassword" placeholder="Enter password">
                     <span class="toggle-eye" onclick="togglePasswordVisibility()">👁️</span>
                 </div>
             </div>
@@ -249,7 +250,7 @@ async def read_root():
                 document.getElementById('dashboardSection').classList.remove('hidden');
                 loadKeys();
             } else {
-                document.getElementById('loginError').innerText = "Incorrect Password! Try 'admin123'";
+                document.getElementById('loginError').innerText = "Incorrect Password!";
             }
         }
 
@@ -431,7 +432,10 @@ async def start_checkout(data: PaymentRequest):
         page = await context.new_page()
         
         try:
-            await page.goto("https://chatgpt.com/?action=show_upgrade", timeout=60000)
+            await page.goto("https://chatgpt.com/", timeout=60000)
+            await page.wait_for_load_state("domcontentloaded", timeout=60000)
+            
+            await page.locator("text=Free offer").click(timeout=10000)
             await page.wait_for_load_state("domcontentloaded", timeout=60000)
             
             try:
